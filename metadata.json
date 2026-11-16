@@ -1,0 +1,6 @@
+{
+  "name": "Netzone Business Manager",
+  "description": "Business operations, invoicing, job material costing, expense tracking, payments, and monthly profit & loss manager for mosquito mesh, aluminium window frame, security door, blinds, and curtains businesses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

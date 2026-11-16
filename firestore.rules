@@ -1,0 +1,525 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Hardened Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAuthorizedEmail() {
+      return isSignedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email == 'arsathgnaniyar911@gmail.com';
+    }
+
+    function isOwner(ownerId) {
+      return isAuthorizedEmail() && request.auth.uid == ownerId;
+    }
+
+    function isValidDateStr(d) {
+      return d is string && d.size() == 10 && d.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidPincode(p) {
+      return p is string && p.size() == 6 && p.matches('^[0-9]{6}$');
+    }
+
+    // --- Validation Blueprints ---
+
+    function isValidSettings(data, userId) {
+      return data.keys().hasAll([
+        'ownerId', 'businessName', 'address', 'phone', 'email',
+        'invoicePrefix', 'currencySymbol', 'currencyCode', 'nextInvoiceSeq',
+        'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'businessName', 'address', 'phone', 'email',
+        'invoicePrefix', 'currencySymbol', 'currencyCode', 'nextInvoiceSeq',
+        'logoUrl', 'logoWhiteUrl', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId == userId
+      && data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 120
+      && data.address is string && data.address.size() <= 300
+      && data.phone is string && data.phone.size() <= 25
+      && data.email is string && data.email.size() <= 120
+      && data.invoicePrefix is string && data.invoicePrefix.size() >= 1 && data.invoicePrefix.size() <= 15
+      && data.currencySymbol is string && data.currencySymbol.size() >= 1 && data.currencySymbol.size() <= 5
+      && data.currencyCode is string && data.currencyCode.size() >= 3 && data.currencyCode.size() <= 5
+      && data.nextInvoiceSeq is number && data.nextInvoiceSeq >= 1
+      && (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 350000))
+      && (!('logoWhiteUrl' in data) || (data.logoWhiteUrl is string && data.logoWhiteUrl.size() <= 350000))
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll([
+        'ownerId', 'name', 'phone', 'address', 'pincode', 'notes', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'name', 'phone', 'address', 'pincode', 'notes', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+      && data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 20
+      && data.address is string && data.address.size() >= 1 && data.address.size() <= 300
+      && isValidPincode(data.pincode)
+      && data.notes is string && data.notes.size() <= 500
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidInvoiceItem(item) {
+      return item is map
+      && item.keys().hasAll(['description', 'quantity', 'unitPrice', 'lineTotal'])
+      && item.keys().hasOnly(['description', 'quantity', 'unitPrice', 'lineTotal', 'unit'])
+      && item.description is string && item.description.size() >= 1 && item.description.size() <= 200
+      && item.quantity is number && item.quantity > 0
+      && item.unitPrice is number && item.unitPrice >= 0
+      && item.lineTotal is number && item.lineTotal >= 0;
+    }
+
+    function isValidInvoiceV2(data) {
+      return data.keys().hasAll([
+        'ownerId', 'invoiceNumber', 'date', 'customerId', 'customerName',
+        'customerPhone', 'customerAddress', 'customerPincode', 'workSiteAddress',
+        'itemCount', 'subtotal', 'discount', 'labourCharges', 'transportCharges',
+        'total', 'advancePaid', 'paidAmount', 'balanceDue', 'paymentStatus',
+        'status', 'voidReason', 'notes', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'invoiceNumber', 'date', 'customerId', 'customerName',
+        'customerPhone', 'customerAddress', 'customerPincode', 'workSiteAddress',
+        'itemCount', 'subtotal', 'discount', 'labourCharges', 'transportCharges',
+        'total', 'advancePaid', 'paidAmount', 'balanceDue', 'paymentStatus',
+        'status', 'voidReason', 'notes', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 40
+      && isValidDateStr(data.date)
+      && data.customerId is string && data.customerId.size() <= 128
+      && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120
+      && data.customerPhone is string && data.customerPhone.size() >= 5 && data.customerPhone.size() <= 20
+      && data.customerAddress is string && data.customerAddress.size() >= 1 && data.customerAddress.size() <= 300
+      && (data.customerPincode == '' || isValidPincode(data.customerPincode))
+      && data.workSiteAddress is string && data.workSiteAddress.size() <= 300
+      && data.itemCount is number && data.itemCount >= 1
+      && data.subtotal is number && data.subtotal >= 0
+      && data.discount is number && data.discount >= 0 && data.discount <= data.subtotal
+      && data.labourCharges is number && data.labourCharges >= 0
+      && data.transportCharges is number && data.transportCharges >= 0
+      && data.total is number && data.total >= 0
+      && data.advancePaid is number && data.advancePaid >= 0
+      && data.paidAmount is number && data.paidAmount >= 0
+      && data.balanceDue is number && data.balanceDue >= 0
+      && data.paymentStatus in ['unpaid', 'partial', 'paid']
+      && data.status in ['active', 'voided']
+      && data.voidReason is string && data.voidReason.size() <= 300
+      && data.notes is string && data.notes.size() <= 500
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidInvoiceLegacy(data) {
+      return data.keys().hasAll([
+        'ownerId', 'invoiceNumber', 'date', 'customerId', 'customerName',
+        'customerPhone', 'customerAddress', 'customerPincode', 'items',
+        'subtotal', 'discount', 'total', 'advancePaid', 'paidAmount',
+        'balanceDue', 'paymentStatus', 'notes', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'invoiceNumber', 'date', 'customerId', 'customerName',
+        'customerPhone', 'customerAddress', 'customerPincode', 'items',
+        'subtotal', 'discount', 'total', 'advancePaid', 'paidAmount',
+        'balanceDue', 'paymentStatus', 'notes', 'createdAt', 'updatedAt',
+        'status', 'voidReason'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 40
+      && isValidDateStr(data.date)
+      && data.customerId is string && data.customerId.size() <= 128
+      && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120
+      && data.customerPhone is string && data.customerPhone.size() >= 5 && data.customerPhone.size() <= 20
+      && data.customerAddress is string && data.customerAddress.size() >= 1 && data.customerAddress.size() <= 300
+      && (data.customerPincode == '' || isValidPincode(data.customerPincode))
+      && data.items is list && data.items.size() >= 1 && data.items.size() <= 30
+      && isValidInvoiceItem(data.items[0])
+      && data.subtotal is number && data.subtotal >= 0
+      && data.discount is number && data.discount >= 0 && data.discount <= data.subtotal
+      && data.total is number && data.total >= 0
+      && data.advancePaid is number && data.advancePaid >= 0
+      && data.paidAmount is number && data.paidAmount >= 0
+      && data.balanceDue is number && data.balanceDue >= 0
+      && data.paymentStatus in ['unpaid', 'partial', 'paid']
+      && data.notes is string && data.notes.size() <= 500
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidInvoiceSubItem(data, invoiceId) {
+      return data.keys().hasAll([
+        'ownerId', 'invoiceId', 'order', 'description', 'unit',
+        'quantity', 'unitPrice', 'lineTotal', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'invoiceId', 'order', 'description', 'unit',
+        'quantity', 'unitPrice', 'lineTotal', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && data.invoiceId is string && data.invoiceId == invoiceId && isValidId(data.invoiceId)
+      && data.order is number && data.order >= 0
+      && data.description is string && data.description.size() >= 1 && data.description.size() <= 200
+      && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 20
+      && data.quantity is number && data.quantity > 0
+      && data.unitPrice is number && data.unitPrice >= 0
+      && data.lineTotal is number && data.lineTotal >= 0
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidInvoiceNumberLock(data) {
+      return data.keys().hasAll([
+        'ownerId', 'invoiceId', 'invoiceNumber', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'invoiceId', 'invoiceNumber', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && isValidId(data.invoiceId)
+      && data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 40
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidMaterialLine(mat) {
+      return mat is map
+      && mat.keys().hasAll(['category', 'name', 'quantity', 'unit', 'unitCost', 'totalCost'])
+      && mat.keys().hasOnly(['category', 'name', 'quantity', 'unit', 'unitCost', 'totalCost'])
+      && mat.category in ['Mosquito Mesh', 'Aluminium Frame', 'Accessories', 'Blinds & Curtains', 'Security Door', 'Other Materials']
+      && mat.name is string && mat.name.size() >= 1 && mat.name.size() <= 120
+      && mat.quantity is number && mat.quantity > 0
+      && mat.unit is string && mat.unit.size() >= 1 && mat.unit.size() <= 20
+      && mat.unitCost is number && mat.unitCost >= 0
+      && mat.totalCost is number && mat.totalCost >= 0;
+    }
+
+    function isValidJobCosting(data) {
+      return data.keys().hasAll([
+        'ownerId', 'jobTitle', 'date', 'customerId', 'customerName',
+        'invoiceId', 'invoiceNumber', 'estimatedSellingPrice', 'materials',
+        'totalMaterialCost', 'labourCost', 'transportCost', 'installationCost',
+        'otherJobCost', 'totalJobCost', 'estimatedProfit', 'notes',
+        'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'jobTitle', 'date', 'customerId', 'customerName',
+        'invoiceId', 'invoiceNumber', 'estimatedSellingPrice', 'materials',
+        'totalMaterialCost', 'labourCost', 'transportCost', 'installationCost',
+        'otherJobCost', 'totalJobCost', 'estimatedProfit', 'notes',
+        'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && data.jobTitle is string && data.jobTitle.size() >= 1 && data.jobTitle.size() <= 160
+      && isValidDateStr(data.date)
+      && data.customerId is string && data.customerId.size() <= 128
+      && data.customerName is string && data.customerName.size() <= 120
+      && data.invoiceId is string && data.invoiceId.size() <= 128
+      && data.invoiceNumber is string && data.invoiceNumber.size() <= 40
+      && data.estimatedSellingPrice is number && data.estimatedSellingPrice >= 0
+      && data.materials is list && data.materials.size() >= 1 && data.materials.size() <= 30
+      && isValidMaterialLine(data.materials[0])
+      && data.totalMaterialCost is number && data.totalMaterialCost >= 0
+      && data.labourCost is number && data.labourCost >= 0
+      && data.transportCost is number && data.transportCost >= 0
+      && data.installationCost is number && data.installationCost >= 0
+      && data.otherJobCost is number && data.otherJobCost >= 0
+      && data.totalJobCost is number && data.totalJobCost >= 0
+      && data.estimatedProfit is number
+      && data.notes is string && data.notes.size() <= 500
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll([
+        'ownerId', 'date', 'category', 'description', 'amount', 'paymentMode', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'date', 'category', 'description', 'amount', 'paymentMode', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && isValidDateStr(data.date)
+      && data.category in ['Rent', 'Electricity', 'Salary', 'Transport', 'Tools', 'Miscellaneous']
+      && data.description is string && data.description.size() >= 1 && data.description.size() <= 250
+      && data.amount is number && data.amount > 0
+      && data.paymentMode in ['Cash', 'UPI', 'Bank Transfer']
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+        'ownerId', 'invoiceId', 'invoiceNumber', 'customerId', 'customerName',
+        'date', 'amount', 'method', 'isAdvance', 'reference', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'invoiceId', 'invoiceNumber', 'customerId', 'customerName',
+        'date', 'amount', 'method', 'isAdvance', 'reference', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId == request.auth.uid && isValidId(data.ownerId)
+      && isValidId(data.invoiceId)
+      && data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 40
+      && data.customerId is string && data.customerId.size() <= 128
+      && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120
+      && isValidDateStr(data.date)
+      && data.amount is number && data.amount > 0
+      && data.method in ['Cash', 'UPI', 'Bank Transfer', 'Cheque']
+      && data.isAdvance is bool
+      && data.reference is string && data.reference.size() <= 120
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    match /settings/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if isAuthorizedEmail() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(userId) && isOwner(userId)
+        && isValidSettings(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isOwner(userId)
+        && isValidSettings(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['nextInvoiceSeq', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'businessName', 'address', 'phone', 'email',
+            'invoicePrefix', 'currencySymbol', 'currencyCode', 'updatedAt'
+          ])
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'logoUrl', 'logoWhiteUrl', 'updatedAt'
+          ])
+        );
+      allow delete: if false;
+    }
+
+    match /settings/{userId}/invoiceNumbers/{lockId} {
+      allow get: if isValidId(userId) && isValidId(lockId) && isOwner(userId);
+      allow list: if isValidId(userId) && isOwner(userId) && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(userId) && isValidId(lockId) && isOwner(userId)
+        && isValidInvoiceNumberLock(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(userId) && isValidId(lockId) && isOwner(userId);
+    }
+
+    match /customers/{customerId} {
+      allow get: if isValidId(customerId) && isOwner(existing().ownerId);
+      allow list: if isAuthorizedEmail() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(customerId) && isAuthorizedEmail()
+        && isValidCustomer(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(customerId) && isOwner(existing().ownerId)
+        && isValidCustomer(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'phone', 'address', 'pincode', 'notes', 'updatedAt'
+        ]);
+      allow delete: if isValidId(customerId) && isOwner(existing().ownerId);
+    }
+
+    match /invoices/{invoiceId} {
+      allow get: if isValidId(invoiceId) && isOwner(existing().ownerId);
+      allow list: if isAuthorizedEmail() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(invoiceId) && isAuthorizedEmail()
+        && isValidInvoiceV2(incoming())
+        && incoming().status == 'active'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          incoming().customerId == ''
+          || (
+            isValidId(incoming().customerId)
+            && (
+              (exists(/databases/$(database)/documents/customers/$(incoming().customerId))
+                && get(/databases/$(database)/documents/customers/$(incoming().customerId)).data.ownerId == request.auth.uid)
+              ||
+              (existsAfter(/databases/$(database)/documents/customers/$(incoming().customerId))
+                && getAfter(/databases/$(database)/documents/customers/$(incoming().customerId)).data.ownerId == request.auth.uid)
+            )
+          )
+        );
+      allow update: if isValidId(invoiceId) && isOwner(existing().ownerId)
+        && (isValidInvoiceV2(incoming()) || isValidInvoiceLegacy(incoming()))
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().invoiceNumber == existing().invoiceNumber
+        && incoming().updatedAt == request.time
+        && (
+          incoming().customerId == ''
+          || incoming().customerId == existing().customerId
+          || (
+            isValidId(incoming().customerId)
+            && exists(/databases/$(database)/documents/customers/$(incoming().customerId))
+            && get(/databases/$(database)/documents/customers/$(incoming().customerId)).data.ownerId == request.auth.uid
+          )
+        )
+        && (
+          (
+            (!('status' in existing()) || existing().status == 'active')
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'paidAmount', 'balanceDue', 'paymentStatus', 'updatedAt'
+            ])
+          )
+          ||
+          (
+            (!('status' in existing()) || existing().status == 'active')
+            && incoming().status == 'voided'
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'voidReason', 'updatedAt'
+            ])
+          )
+          ||
+          (
+            (!('status' in existing()) || existing().status == 'active')
+            && isValidInvoiceV2(incoming())
+            && incoming().status == 'active'
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'date', 'customerId', 'customerName', 'customerPhone',
+              'customerAddress', 'customerPincode', 'workSiteAddress',
+              'itemCount', 'items', 'subtotal', 'discount', 'labourCharges',
+              'transportCharges', 'total', 'advancePaid', 'paidAmount',
+              'balanceDue', 'paymentStatus', 'status', 'voidReason',
+              'notes', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isValidId(invoiceId) && isOwner(existing().ownerId);
+    }
+
+    match /invoices/{invoiceId}/items/{itemId} {
+      allow get: if isValidId(invoiceId) && isValidId(itemId) && isAuthorizedEmail()
+        && exists(/databases/$(database)/documents/invoices/$(invoiceId))
+        && get(/databases/$(database)/documents/invoices/$(invoiceId)).data.ownerId == request.auth.uid;
+      allow list: if isValidId(invoiceId) && isAuthorizedEmail()
+        && resource.data.ownerId == request.auth.uid
+        && exists(/databases/$(database)/documents/invoices/$(invoiceId))
+        && get(/databases/$(database)/documents/invoices/$(invoiceId)).data.ownerId == request.auth.uid;
+      allow create: if isValidId(invoiceId) && isValidId(itemId) && isAuthorizedEmail()
+        && isValidInvoiceSubItem(incoming(), invoiceId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (exists(/databases/$(database)/documents/invoices/$(invoiceId))
+            && get(/databases/$(database)/documents/invoices/$(invoiceId)).data.ownerId == request.auth.uid)
+          ||
+          (existsAfter(/databases/$(database)/documents/invoices/$(invoiceId))
+            && getAfter(/databases/$(database)/documents/invoices/$(invoiceId)).data.ownerId == request.auth.uid)
+        );
+      allow update: if isValidId(invoiceId) && isValidId(itemId) && isAuthorizedEmail()
+        && isValidInvoiceSubItem(incoming(), invoiceId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().invoiceId == existing().invoiceId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/invoices/$(invoiceId))
+        && get(/databases/$(database)/documents/invoices/$(invoiceId)).data.ownerId == request.auth.uid
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'order', 'description', 'unit', 'quantity', 'unitPrice', 'lineTotal', 'updatedAt'
+        ]);
+      allow delete: if isValidId(invoiceId) && isValidId(itemId) && isAuthorizedEmail()
+        && exists(/databases/$(database)/documents/invoices/$(invoiceId))
+        && get(/databases/$(database)/documents/invoices/$(invoiceId)).data.ownerId == request.auth.uid;
+    }
+
+    match /jobCostings/{jobId} {
+      allow get: if isValidId(jobId) && isOwner(existing().ownerId);
+      allow list: if isAuthorizedEmail() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(jobId) && isAuthorizedEmail()
+        && isValidJobCosting(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(jobId) && isOwner(existing().ownerId)
+        && isValidJobCosting(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'jobTitle', 'date', 'customerId', 'customerName',
+          'invoiceId', 'invoiceNumber', 'estimatedSellingPrice', 'materials',
+          'totalMaterialCost', 'labourCost', 'transportCost', 'installationCost',
+          'otherJobCost', 'totalJobCost', 'estimatedProfit', 'notes', 'updatedAt'
+        ]);
+      allow delete: if isValidId(jobId) && isOwner(existing().ownerId);
+    }
+
+    match /expenses/{expenseId} {
+      allow get: if isValidId(expenseId) && isOwner(existing().ownerId);
+      allow list: if isAuthorizedEmail() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(expenseId) && isAuthorizedEmail()
+        && isValidExpense(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(expenseId) && isOwner(existing().ownerId)
+        && isValidExpense(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'date', 'category', 'description', 'amount', 'paymentMode', 'updatedAt'
+        ]);
+      allow delete: if isValidId(expenseId) && isOwner(existing().ownerId);
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && isOwner(existing().ownerId);
+      allow list: if isAuthorizedEmail() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidId(paymentId) && isAuthorizedEmail()
+        && isValidPayment(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (exists(/databases/$(database)/documents/invoices/$(incoming().invoiceId))
+            && get(/databases/$(database)/documents/invoices/$(incoming().invoiceId)).data.ownerId == request.auth.uid)
+          ||
+          (existsAfter(/databases/$(database)/documents/invoices/$(incoming().invoiceId))
+            && getAfter(/databases/$(database)/documents/invoices/$(incoming().invoiceId)).data.ownerId == request.auth.uid)
+        );
+      allow update: if isValidId(paymentId) && isOwner(existing().ownerId)
+        && isValidPayment(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().invoiceId == existing().invoiceId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'date', 'amount', 'method', 'reference', 'updatedAt'
+        ]);
+      allow delete: if isValidId(paymentId) && isOwner(existing().ownerId);
+    }
+  }
+}

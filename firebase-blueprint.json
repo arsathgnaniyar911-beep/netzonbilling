@@ -1,0 +1,645 @@
+{
+  "entities": {
+    "BusinessSettings": {
+      "title": "BusinessSettings",
+      "description": "Configuration and profile details for the business workspace.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "businessName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "address": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 25
+        },
+        "email": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "invoicePrefix": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 15
+        },
+        "currencySymbol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5
+        },
+        "currencyCode": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 5
+        },
+        "nextInvoiceSeq": {
+          "type": "number"
+        },
+        "logoUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 350000
+        },
+        "logoWhiteUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 350000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "businessName",
+        "address",
+        "phone",
+        "email",
+        "invoicePrefix",
+        "currencySymbol",
+        "currencyCode",
+        "nextInvoiceSeq",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer contact and location details for Tamil Nadu mesh and interiors jobs.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 20
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "pincode": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$",
+          "minLength": 6,
+          "maxLength": 6
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "phone",
+        "address",
+        "pincode",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Normal invoice without GST breakdown tracking customer details, work site address, charges, totals, payments, and void status.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "customerPhone": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 20
+        },
+        "customerAddress": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "customerPincode": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 6
+        },
+        "workSiteAddress": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "itemCount": {
+          "type": "number"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "labourCharges": {
+          "type": "number"
+        },
+        "transportCharges": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "advancePaid": {
+          "type": "number"
+        },
+        "paidAmount": {
+          "type": "number"
+        },
+        "balanceDue": {
+          "type": "number"
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["unpaid", "partial", "paid"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "voided"]
+        },
+        "voidReason": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "invoiceNumber",
+        "date",
+        "customerId",
+        "customerName",
+        "customerPhone",
+        "customerAddress",
+        "customerPincode",
+        "workSiteAddress",
+        "itemCount",
+        "subtotal",
+        "discount",
+        "labourCharges",
+        "transportCharges",
+        "total",
+        "advancePaid",
+        "paidAmount",
+        "balanceDue",
+        "paymentStatus",
+        "status",
+        "voidReason",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InvoiceLineItem": {
+      "title": "InvoiceLineItem",
+      "description": "Line item stored in the invoice items subcollection supporting unlimited products.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "invoiceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "order": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "unitPrice": {
+          "type": "number"
+        },
+        "lineTotal": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "invoiceId",
+        "order",
+        "description",
+        "unit",
+        "quantity",
+        "unitPrice",
+        "lineTotal",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InvoiceNumberLock": {
+      "title": "InvoiceNumberLock",
+      "description": "Atomic uniqueness lock preventing duplicate invoice numbers per workspace.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "invoiceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "invoiceId",
+        "invoiceNumber",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "JobCosting": {
+      "title": "JobCosting",
+      "description": "Material cost calculator and direct job costing record.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "jobTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "invoiceId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "estimatedSellingPrice": {
+          "type": "number"
+        },
+        "materials": {
+          "type": "array"
+        },
+        "totalMaterialCost": {
+          "type": "number"
+        },
+        "labourCost": {
+          "type": "number"
+        },
+        "transportCost": {
+          "type": "number"
+        },
+        "installationCost": {
+          "type": "number"
+        },
+        "otherJobCost": {
+          "type": "number"
+        },
+        "totalJobCost": {
+          "type": "number"
+        },
+        "estimatedProfit": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "jobTitle",
+        "date",
+        "customerId",
+        "customerName",
+        "invoiceId",
+        "invoiceNumber",
+        "estimatedSellingPrice",
+        "materials",
+        "totalMaterialCost",
+        "labourCost",
+        "transportCost",
+        "installationCost",
+        "otherJobCost",
+        "totalJobCost",
+        "estimatedProfit",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "General business operating expenses.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Rent", "Electricity", "Salary", "Transport", "Tools", "Miscellaneous"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "amount": {
+          "type": "number"
+        },
+        "paymentMode": {
+          "type": "string",
+          "enum": ["Cash", "UPI", "Bank Transfer"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "date",
+        "category",
+        "description",
+        "amount",
+        "paymentMode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Cash or digital payment received against an invoice.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "invoiceId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "customerId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "amount": {
+          "type": "number"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["Cash", "UPI", "Bank Transfer", "Cheque"]
+        },
+        "isAdvance": {
+          "type": "boolean"
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "invoiceId",
+        "invoiceNumber",
+        "customerId",
+        "customerName",
+        "date",
+        "amount",
+        "method",
+        "isAdvance",
+        "reference",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/settings/{userId}": {
+      "schema": { "$ref": "#/entities/BusinessSettings" },
+      "description": "Business settings document keyed by owner UID."
+    },
+    "/settings/{userId}/invoiceNumbers/{lockId}": {
+      "schema": { "$ref": "#/entities/InvoiceNumberLock" },
+      "description": "Unique invoice number locks scoped under the owner settings doc."
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Customer directory documents scoped by ownerId."
+    },
+    "/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Normal invoices scoped by ownerId."
+    },
+    "/invoices/{invoiceId}/items/{itemId}": {
+      "schema": { "$ref": "#/entities/InvoiceLineItem" },
+      "description": "Unlimited line items subcollection belonging to an invoice."
+    },
+    "/jobCostings/{jobId}": {
+      "schema": { "$ref": "#/entities/JobCosting" },
+      "description": "Material cost calculator job records scoped by ownerId."
+    },
+    "/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Operating expense records scoped by ownerId."
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Customer payment receipts linked to invoices scoped by ownerId."
+    }
+  }
+}

@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --navy-primary: #0B1F3A;
+    --navy-deep: #071629;
+    --navy-secondary: #163A63;
+    --bg-light: #F4F7FB;
+    --blue-light: #E8EFF8;
+    --text-main: #172338;
+    --text-secondary: #64748B;
+    --border-subtle: #DCE4EF;
+    --status-success: #16805D;
+    --status-warning: #D99722;
+    --status-error: #D64545;
+  }
+
+  *, *::before, *::after {
+    font-family: "Poppins", system-ui, -apple-system, sans-serif;
+  }
+
+  html, body {
+    font-family: "Poppins", system-ui, -apple-system, sans-serif;
+    color: #172338;
+    background-color: #F4F7FB;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Poppins", system-ui, -apple-system, sans-serif;
+  }
+
+  input, button, select, textarea {
+    font-family: inherit;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.font-mono-num {
+  font-family: "Poppins", system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print Styles for Normal Invoices */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  * {
+    font-family: "Poppins", system-ui, -apple-system, sans-serif !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #172338 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-container {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #FFFFFF !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
